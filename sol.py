@@ -131,6 +131,7 @@ def solve_best_first(pegstate, goal):
     priority_fn = make_sort_estimated_moves_lower_bound_fn(goal)
     candidates = []
 
+    observed_states = set()
     moves = []
 
     while True:
@@ -141,9 +142,12 @@ def solve_best_first(pegstate, goal):
         if solved(pegstate, goal):
             return moves
         else:
+            observed_states.add(hashable_pegstate(pegstate))
             visits += 1
         for start, end in candidate_moves(pegstate):
             next_state = apply_move(pegstate, start, end)
+            if hashable_pegstate(next_state) in observed_states:
+                continue
             candidates.append((next_state, moves + [(start, end)]))
         candidates.sort(key=lambda el: -priority_fn(el))
         pegstate, moves = candidates.pop()
