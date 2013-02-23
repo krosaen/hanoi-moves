@@ -70,7 +70,7 @@ def main():
 
 	print list(candidate_moves(pegstate))
 
-	moves = solve(pegstate, goal)
+	moves = solve_breadth_first(pegstate, goal)
 	print len(moves)
 	for start, end in moves:
 		print "%s %s" % (start+1, end+1)
@@ -89,10 +89,8 @@ def transform_to_pegs(rep, k):
 	return result
 
 
-observed_moves = set()
-
-def hash_pegstate(pegstate):
-	return hash(tuple([tuple(peg) for peg in pegstate]))
+def hashable_pegstate(pegstate):
+	return tuple([tuple(peg) for peg in pegstate])
 
 
 class Queue(object): 
@@ -107,30 +105,29 @@ class Queue(object):
                 self.out_stack.append(self.in_stack.pop())
         return self.out_stack.pop()
 
-def make_move2(pegstate, goal, moves=[], depth = 0, candidates=Queue()):
-	print "make_move%s(\n  %s, \n  %s, \n  %s)" % (depth, pegstate, goal, moves)
-	if solved(pegstate, goal):
-		return moves
 
-	global observed_moves
-	observed_moves.add(hash_pegstate(pegstate))
+def solve_breadth_first(pegstate, goal):
+	"solves input01.txt after visitin 808 states"
+	moves = []
+	visits = 1
+	candidates = Queue()
 
-	for start, end in candidate_moves(pegstate):
-		next_state = apply_move(pegstate, start, end)
-		if hash_pegstate(next_state) in observed_moves:
-			continue
-		candidates.push((next_state, moves + [(start, end)]))
+	observed_states = set()
+	moves = []
 
-	next_state, next_moves = candidates.pop()
-	result = make_move2(
-		next_state,
-		goal,
-		next_moves,
-		depth + 1)
-	if result:
-		return result
-
-	return False
+	while True:
+		print "%s\n  %s,\n  %s" % (visits, pegstate, moves)
+		if solved(pegstate, goal):
+			return moves
+		else:
+			observed_states.add(hashable_pegstate(pegstate))
+			visits += 1
+		for start, end in candidate_moves(pegstate):
+			next_state = apply_move(pegstate, start, end)
+			if hashable_pegstate(next_state) in observed_states:
+				continue
+			candidates.push((next_state, moves + [(start, end)]))
+		pegstate, moves = candidates.pop()
 
 
 def solved(pegstate, goal):
@@ -155,11 +152,6 @@ def apply_move(pegstate, start, end):
 	result = [peg[:] for peg in pegstate]
 	result[end].append(result[start].pop())
 	return result
-
-
-def solve(pegstate, goal):
-	moves = make_move2(pegstate, goal)
-	return moves
 
 
 def parseinput():
