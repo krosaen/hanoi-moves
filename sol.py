@@ -66,11 +66,7 @@ def main():
 
 	pegstate = transform_to_pegs(start, k)
 
-	print pegstate
-
-	print list(candidate_moves(pegstate))
-
-	moves = solve_breadth_first(pegstate, goal)
+	moves = solve_best_first(pegstate, goal)
 	print len(moves)
 	for start, end in moves:
 		print "%s %s" % (start+1, end+1)
@@ -105,6 +101,41 @@ class Queue(object):
                 self.out_stack.append(self.in_stack.pop())
         return self.out_stack.pop()
 
+def make_sort_estimated_moves_lower_bound_fn(goal):
+	def sort_key_fn(thetuple):
+		"""
+		Args:
+			thetuple: [pegstate, moves_so_far]
+
+		Cost estimated based on the difference between the pegstate
+		and the goal, along with the number of moves taken so far.
+
+		Using this for best first is essentially the 'A*' algorithm.
+		"""
+		pegstate, moves = thetuple
+		nummoves = len(moves)
+		estimated_moves_lower_bound = 0
+		for r, goalpos in enumerate(goal):
+			actual_pos = [i for i, peg in enumerate(pegstate) if r in peg][0]
+
+			if actual_pos == goalpos:
+				continue
+
+			goalpeg = pegstate[goalpos]
+			actualpeg = pegstate[actual_pos]
+
+			estimated_moves_lower_bound += 1 # at least one move to get disc to goal peg
+			for disc in goalpeg:
+				if disc < r:
+					estimated_moves_lower_bound += 1  # at least one move for any disc smaller than r on goal peg
+			for disc in reversed(actualpeg):
+				if disc == r:
+					break
+				estimated_moves_lower_bound += 1 # at least one move for any disc on top of r on existing peg
+
+		return estimated_moves_lower_bound + nummoves
+	return sort_key_fn
+
 
 def solve_breadth_first(pegstate, goal):
 	"solves input01.txt after visitin 808 states"
@@ -116,7 +147,7 @@ def solve_breadth_first(pegstate, goal):
 	moves = []
 
 	while True:
-		print "%s\n  %s,\n  %s" % (visits, pegstate, moves)
+		print "%s\n  %s,\n  %s" % (visits, pegstate, len(moves))
 		if solved(pegstate, goal):
 			return moves
 		else:
@@ -127,6 +158,28 @@ def solve_breadth_first(pegstate, goal):
 			if hashable_pegstate(next_state) in observed_states:
 				continue
 			candidates.push((next_state, moves + [(start, end)]))
+		pegstate, moves = candidates.pop()
+
+def solve_best_first(pegstate, goal):
+	"solves input01.txt after visiting 6 states!"
+	moves = []
+	visits = 0
+	priority_fn = make_sort_estimated_moves_lower_bound_fn(goal)
+	candidates = []
+
+	moves = []
+
+	while True:
+		lastmove = moves[-1] if moves else (None, None)
+		print "%s via %s->%s (%s moves so far, %s candidates under consideration)" % (pegstate, lastmove[0], lastmove[1], visits, len(candidates))
+		if solved(pegstate, goal):
+			return moves
+		else:
+			visits += 1
+		for start, end in candidate_moves(pegstate):
+			next_state = apply_move(pegstate, start, end)
+			candidates.append((next_state, moves + [(start, end)]))
+		candidates.sort(key=lambda el: -priority_fn(el))
 		pegstate, moves = candidates.pop()
 
 
@@ -160,7 +213,6 @@ def parseinput():
 	start = map(lambda el: int(el) - 1, thein.next().split())
 	goal = map(lambda el: int(el) - 1, thein.next().split())
 	return n, k, start, goal
-
 
 
 main()
