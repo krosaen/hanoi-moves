@@ -125,10 +125,15 @@ def solve_breadth_first(pegstate, goal):
 
 
 def solve_best_first(pegstate, goal, beam=None):
-    "solves input01.txt after visiting 6 states, input02.txt in 751."
+    """
+    Solves input01.txt after visiting 6 states, input02.txt in 751.
+
+    Prioritizes next moves based on number of moves so far and estimated
+    lower bound on number of moves to goal - effectively the a* algorithm.
+    """
     moves = []
     visits = 0
-    priority_fn = make_sort_estimated_moves_lower_bound_fn(goal)
+    cost_to_goal = make_cost_to_goal_fn(goal)
     candidates = []
 
     observed_states = set()
@@ -149,7 +154,7 @@ def solve_best_first(pegstate, goal, beam=None):
             if hashable_pegstate(next_state) in observed_states:
                 continue
             next_moves = moves + [(start, end)]
-            candidates.append((next_state, next_moves, priority_fn(next_state, next_moves)))
+            candidates.append((next_state, next_moves, len(next_moves) + cost_to_goal(next_state)))
         candidates.sort(key=lambda el: -el[2])
         if beam and len(candidates) > beam:
             candidates = candidates[:beam]
@@ -178,15 +183,12 @@ class Queue(object):
         return len(self.in_stack) + len(self.out_stack)
 
 
-def make_sort_estimated_moves_lower_bound_fn(goal):
-    def sort_key_fn(pegstate, moves_so_far):
+def make_cost_to_goal_fn(goal):
+    def cost_fn(pegstate):
         """
           Cost estimated based on the difference between the pegstate
-          and the goal, along with the number of moves taken so far.
-
-          Using this for best first is essentially the 'A*' algorithm.
+          and the goal - a lower bound on the number of moves required.
           """
-        nummoves = len(moves_so_far)
         estimated_moves_lower_bound = 0
         for r, goalpos in enumerate(goal):
             actual_pos = [i for i, peg in enumerate(pegstate) if r in peg][0]
@@ -206,9 +208,9 @@ def make_sort_estimated_moves_lower_bound_fn(goal):
                     break
                 estimated_moves_lower_bound += 1 # at least one move for any disc on top of r on existing peg
 
-        return estimated_moves_lower_bound + nummoves
+        return estimated_moves_lower_bound
 
-    return sort_key_fn
+    return cost_fn
 
 
 def solved(pegstate, goal):
