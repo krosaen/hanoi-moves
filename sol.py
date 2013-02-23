@@ -148,11 +148,12 @@ def solve_best_first(pegstate, goal, beam=None):
             next_state = apply_move(pegstate, start, end)
             if hashable_pegstate(next_state) in observed_states:
                 continue
-            candidates.append((next_state, moves + [(start, end)]))
-        candidates.sort(key=lambda el: -priority_fn(el))
+            next_moves = moves + [(start, end)]
+            candidates.append((next_state, next_moves, priority_fn(next_state, next_moves)))
+        candidates.sort(key=lambda el: -el[2])
         if beam and len(candidates) > beam:
             candidates = candidates[:beam]
-        pegstate, moves = candidates.pop()
+        pegstate, moves, estimate = candidates.pop()
 
 
 def hashable_pegstate(pegstate):
@@ -178,18 +179,14 @@ class Queue(object):
 
 
 def make_sort_estimated_moves_lower_bound_fn(goal):
-    def sort_key_fn(thetuple):
+    def sort_key_fn(pegstate, moves_so_far):
         """
-          Args:
-              thetuple: [pegstate, moves_so_far]
-
           Cost estimated based on the difference between the pegstate
           and the goal, along with the number of moves taken so far.
 
           Using this for best first is essentially the 'A*' algorithm.
           """
-        pegstate, moves = thetuple
-        nummoves = len(moves)
+        nummoves = len(moves_so_far)
         estimated_moves_lower_bound = 0
         for r, goalpos in enumerate(goal):
             actual_pos = [i for i, peg in enumerate(pegstate) if r in peg][0]
