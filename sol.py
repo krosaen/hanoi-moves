@@ -97,7 +97,7 @@ def transform_to_pegs(rep, k):
 
 
 def solve_breadth_first(pegstate, goal):
-    "solves input01.txt after visiting 808 states"
+    "solves input01.txt after visiting 808 states, input02.txt in 7487."
     moves = []
     visits = 1
     candidates = Queue()
@@ -124,8 +124,8 @@ def solve_breadth_first(pegstate, goal):
         pegstate, moves = candidates.pop()
 
 
-def solve_best_first(pegstate, goal):
-    "solves input01.txt after visiting 6 states!"
+def solve_best_first(pegstate, goal, beam=None):
+    "solves input01.txt after visiting 6 states, input02.txt in 751."
     moves = []
     visits = 0
     priority_fn = make_sort_estimated_moves_lower_bound_fn(goal)
@@ -150,6 +150,8 @@ def solve_best_first(pegstate, goal):
                 continue
             candidates.append((next_state, moves + [(start, end)]))
         candidates.sort(key=lambda el: -priority_fn(el))
+        if beam and len(candidates) > beam:
+            candidates = candidates[:beam]
         pegstate, moves = candidates.pop()
 
 
