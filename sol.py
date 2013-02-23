@@ -56,11 +56,10 @@ NOTE: You need to write the full code taking all inputs are from stdin and outpu
 
 import fileinput
 
-
-
 def main():
 	n, k, start, goal = parseinput()
 
+	print "%s, %s" % (n, k)
 	print start
 	print goal
 
@@ -71,6 +70,13 @@ def main():
 	print len(moves)
 	for start, end in moves:
 		print "%s %s" % (start+1, end+1)
+
+def parseinput():
+	thein = fileinput.input()
+	n, k = map(int, thein.next().split())
+	start = map(lambda el: int(el) - 1, thein.next().split())
+	goal = map(lambda el: int(el) - 1, thein.next().split())
+	return n, k, start, goal
 
 def transform_to_pegs(rep, k):
 	"""
@@ -85,10 +91,57 @@ def transform_to_pegs(rep, k):
 		result[pos].append(r)
 	return result
 
+def solve_breadth_first(pegstate, goal):
+	"solves input01.txt after visiting 808 states"
+	moves = []
+	visits = 1
+	candidates = Queue()
+
+	observed_states = set()
+	moves = []
+
+	while True:
+		lastmove = moves[-1] if moves else (None, None)
+		print "%s via %s->%s (%s moves so far, %s candidates under consideration)" % (
+			pegstate, lastmove[0], lastmove[1], visits, len(candidates))
+
+		if solved(pegstate, goal):
+			return moves
+		else:
+			observed_states.add(hashable_pegstate(pegstate))
+			visits += 1
+		for start, end in candidate_moves(pegstate):
+			next_state = apply_move(pegstate, start, end)
+			if hashable_pegstate(next_state) in observed_states:
+				continue
+			candidates.push((next_state, moves + [(start, end)]))
+		pegstate, moves = candidates.pop()
+
+def solve_best_first(pegstate, goal):
+	"solves input01.txt after visiting 6 states!"
+	moves = []
+	visits = 0
+	priority_fn = make_sort_estimated_moves_lower_bound_fn(goal)
+	candidates = []
+
+	moves = []
+
+	while True:
+		lastmove = moves[-1] if moves else (None, None)
+		print "%s via %s->%s (%s moves so far, %s candidates under consideration)" % (
+			pegstate, lastmove[0], lastmove[1], visits, len(candidates))
+		if solved(pegstate, goal):
+			return moves
+		else:
+			visits += 1
+		for start, end in candidate_moves(pegstate):
+			next_state = apply_move(pegstate, start, end)
+			candidates.append((next_state, moves + [(start, end)]))
+		candidates.sort(key=lambda el: -priority_fn(el))
+		pegstate, moves = candidates.pop()
 
 def hashable_pegstate(pegstate):
 	return tuple([tuple(peg) for peg in pegstate])
-
 
 class Queue(object): 
     def __init__(self):
@@ -140,55 +193,6 @@ def make_sort_estimated_moves_lower_bound_fn(goal):
 		return estimated_moves_lower_bound + nummoves
 	return sort_key_fn
 
-
-def solve_breadth_first(pegstate, goal):
-	"solves input01.txt after visitin 808 states"
-	moves = []
-	visits = 1
-	candidates = Queue()
-
-	observed_states = set()
-	moves = []
-
-	while True:
-		lastmove = moves[-1] if moves else (None, None)
-		print "%s via %s->%s (%s moves so far, %s candidates under consideration)" % (pegstate, lastmove[0], lastmove[1], visits, len(candidates))
-
-		if solved(pegstate, goal):
-			return moves
-		else:
-			observed_states.add(hashable_pegstate(pegstate))
-			visits += 1
-		for start, end in candidate_moves(pegstate):
-			next_state = apply_move(pegstate, start, end)
-			if hashable_pegstate(next_state) in observed_states:
-				continue
-			candidates.push((next_state, moves + [(start, end)]))
-		pegstate, moves = candidates.pop()
-
-def solve_best_first(pegstate, goal):
-	"solves input01.txt after visiting 6 states!"
-	moves = []
-	visits = 0
-	priority_fn = make_sort_estimated_moves_lower_bound_fn(goal)
-	candidates = []
-
-	moves = []
-
-	while True:
-		lastmove = moves[-1] if moves else (None, None)
-		print "%s via %s->%s (%s moves so far, %s candidates under consideration)" % (pegstate, lastmove[0], lastmove[1], visits, len(candidates))
-		if solved(pegstate, goal):
-			return moves
-		else:
-			visits += 1
-		for start, end in candidate_moves(pegstate):
-			next_state = apply_move(pegstate, start, end)
-			candidates.append((next_state, moves + [(start, end)]))
-		candidates.sort(key=lambda el: -priority_fn(el))
-		pegstate, moves = candidates.pop()
-
-
 def solved(pegstate, goal):
 	for r, pos in enumerate(goal):
 		if r not in pegstate[pos]:
@@ -200,7 +204,6 @@ def top_of_pegs(pegstate):
 		if len(peg):
 			yield i, peg[-1]
 
-
 def candidate_moves(pegstate):
 	for i, top_r in top_of_pegs(pegstate):
 		for j, peg in enumerate(pegstate):
@@ -211,14 +214,5 @@ def apply_move(pegstate, start, end):
 	result = [peg[:] for peg in pegstate]
 	result[end].append(result[start].pop())
 	return result
-
-
-def parseinput():
-	thein = fileinput.input()
-	n, k = map(int, thein.next().split())
-	start = map(lambda el: int(el) - 1, thein.next().split())
-	goal = map(lambda el: int(el) - 1, thein.next().split())
-	return n, k, start, goal
-
 
 main()
