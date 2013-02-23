@@ -67,6 +67,7 @@ def main():
 	pegstate = transform_to_pegs(start, k)
 
 	moves = solve_best_first(pegstate, goal)
+	# moves = solve_breadth_first(pegstate, goal)
 	print len(moves)
 	for start, end in moves:
 		print "%s %s" % (start+1, end+1)
@@ -100,6 +101,9 @@ class Queue(object):
             while self.in_stack:
                 self.out_stack.append(self.in_stack.pop())
         return self.out_stack.pop()
+
+    def __len__(self):
+    	return len(self.in_stack) + len(self.out_stack)
 
 def make_sort_estimated_moves_lower_bound_fn(goal):
 	def sort_key_fn(thetuple):
@@ -147,7 +151,9 @@ def solve_breadth_first(pegstate, goal):
 	moves = []
 
 	while True:
-		print "%s\n  %s,\n  %s" % (visits, pegstate, len(moves))
+		lastmove = moves[-1] if moves else (None, None)
+		print "%s via %s->%s (%s moves so far, %s candidates under consideration)" % (pegstate, lastmove[0], lastmove[1], visits, len(candidates))
+
 		if solved(pegstate, goal):
 			return moves
 		else:
