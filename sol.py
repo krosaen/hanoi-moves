@@ -70,11 +70,10 @@ def main():
 
 	print list(candidate_moves(pegstate))
 
-
 	moves = solve(pegstate, goal)
 	print len(moves)
 	for start, end in moves:
-		print "%s %s" % (start, end)
+		print "%s %s" % (start+1, end+1)
 
 def transform_to_pegs(rep, k):
 	"""
@@ -95,28 +94,44 @@ observed_moves = set()
 def hash_pegstate(pegstate):
 	return hash(tuple([tuple(peg) for peg in pegstate]))
 
-def make_move(pegstate, goal, moves, depth = 0):
-	print "make_move%s(%s, %s, %s)" % (depth, pegstate, goal, moves)
+
+class Queue(object): 
+    def __init__(self):
+        self.in_stack = []
+        self.out_stack = []
+    def push(self, obj):
+        self.in_stack.append(obj)
+    def pop(self):
+        if not self.out_stack:
+            while self.in_stack:
+                self.out_stack.append(self.in_stack.pop())
+        return self.out_stack.pop()
+
+def make_move2(pegstate, goal, moves=[], depth = 0, candidates=Queue()):
+	print "make_move%s(\n  %s, \n  %s, \n  %s)" % (depth, pegstate, goal, moves)
 	if solved(pegstate, goal):
-		print "solved!! moves = %s" % moves
-		return True
+		return moves
 
 	global observed_moves
 	observed_moves.add(hash_pegstate(pegstate))
+
 	for start, end in candidate_moves(pegstate):
-		print "candidate: %s, %s for %s" % (start, end, pegstate)
 		next_state = apply_move(pegstate, start, end)
 		if hash_pegstate(next_state) in observed_moves:
-			print "skipping"
 			continue
-		result = make_move(
-			next_state,
-			goal,
-			moves + [(start, end)],
-			depth + 1)
-		if result:
-			return result
+		candidates.push((next_state, moves + [(start, end)]))
+
+	next_state, next_moves = candidates.pop()
+	result = make_move2(
+		next_state,
+		goal,
+		next_moves,
+		depth + 1)
+	if result:
+		return result
+
 	return False
+
 
 def solved(pegstate, goal):
 	for r, pos in enumerate(goal):
@@ -143,9 +158,7 @@ def apply_move(pegstate, start, end):
 
 
 def solve(pegstate, goal):
-	moves = []
-	make_move(pegstate, goal, moves)
-	print "solved moves: %s" % moves
+	moves = make_move2(pegstate, goal)
 	return moves
 
 
