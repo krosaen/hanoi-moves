@@ -55,13 +55,17 @@ NOTE: You need to write the full code taking all inputs are from stdin and outpu
 """
 
 import fileinput
+import logging
+
+logging.getLogger().setLevel(logging.INFO)
 
 def main():
+
 	n, k, start, goal = parseinput()
 
-	print "%s, %s" % (n, k)
-	print start
-	print goal
+	logging.info("%s, %s", n, k)
+	logging.info("%s", start)
+	logging.info("%s", goal)
 
 	pegstate = transform_to_pegs(start, k)
 
@@ -102,7 +106,8 @@ def solve_breadth_first(pegstate, goal):
 
 	while True:
 		lastmove = moves[-1] if moves else (None, None)
-		print "%s via %s->%s (%s moves so far, %s candidates under consideration)" % (
+		logging.info(
+			"%s via %s->%s (%s moves so far, %s candidates under consideration)",
 			pegstate, lastmove[0], lastmove[1], visits, len(candidates))
 
 		if solved(pegstate, goal):
@@ -128,7 +133,8 @@ def solve_best_first(pegstate, goal):
 
 	while True:
 		lastmove = moves[-1] if moves else (None, None)
-		print "%s via %s->%s (%s moves so far, %s candidates under consideration)" % (
+		logging.info(
+			"%s via %s->%s (%s moves so far, %s candidates under consideration)",
 			pegstate, lastmove[0], lastmove[1], visits, len(candidates))
 		if solved(pegstate, goal):
 			return moves
