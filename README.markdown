@@ -41,12 +41,14 @@ A move consists of picking the topmost disc of any one of the pegs and placing i
 At anypoint of time, the decreasing radius property of all the pegs must be maintained.
 
 Constraints:
-1<= N<=8
-3<= K<=5
+	1<= N<=8
+	3<= K<=5
 
 
 Input Format:
+
 N K
+
 2nd line contains N integers.
 Each integer in the second line is in the range 1 to K where the i-th integer denotes the peg to which disc of radius i is present in the initial configuration.
 3rd line denotes the final configuration in a format similar to the initial configuration.
@@ -60,28 +62,28 @@ If there are more than one solutions, it's sufficient to output any one of them.
 Sample Input #00:
 
  
-2 3
-1 1
-2 2
+	2 3
+	1 1
+	2 2
 
 Sample Output #00:
  
-3
-1 3
-1 2
-3 2
+	3
+	1 3
+	1 2
+	3 2
 
 Sample Input #01:
 
-6 4
-4 2 4 3 1 1
-1 1 1 1 1 1
+	6 4
+	4 2 4 3 1 1
+	1 1 1 1 1 1
 
 Sample Output #01:
 
-5
-3 1
-4 3
-4 1
-2 1
-3 1
+	5
+	3 1
+	4 3
+	4 1
+	2 1
+	3 1
